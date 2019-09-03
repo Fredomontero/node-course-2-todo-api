@@ -204,4 +204,15 @@
             console.log(result);
         });
 
+[9] Updating data
+        To update a record we need to use the following code:
+            db.collection('Todos').findOneAndUpdate(
+                {
+                    _id: new Object('5d6e9facd2e62709f3b3128f')
+                }, {
+                    returnOriginal: false
+                }).then((result) => {
+                    console.log(result);
+            })
+
 
