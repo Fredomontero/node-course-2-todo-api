@@ -1,0 +1,185 @@
+|--Annotations-------------------------|
+|  CMP : Complement                    |
+|                                      |
+|                                      |
+|                                      |
+----------------------------------------
+
+[1] We're going to create a todo app with Node.js and mongodb to make data persistent, first we will install mongo with this command: 
+
+    npm install mongodb@3.0.2 --save
+
+[2] Whit mongo installed we can now make the connection, so, we're interested on the Mongoclient constructor. The MongoCliente constructor. The MongoClient constructor lets us connect to a Mongo server and issue commands to manipulates the database. so let's keep moving forward and use the library, we're going to require the library, and from the library we're going to require the MongoClient:
+
+    const MongoClient = require('mongodb').MongoClient;
+
+    With th eMongoClient in place, we can call MongoClient.connect to connect to the db, this methods takes 2 args:
+    
+        1.- The firstone is the url where our db lives, in ptoduction it might be some url from amazon or heroku, for now it's gonna be our localhost.
+        2.- The second one is the callback function will be fired after the connection has either succeded or failed, for example if it fails we can stop the program otherwise we can start manipulating the database.
+
+        --  Working with the first parameter:
+            Since we're running this in out local machine, we will use the localhost in the url, also we need to specify a port, and after that the name of the database, Mongodb came with a default database called test, but we will create a newone called TodoApp, so we need to specify our url string like this:
+
+                MongoClient.connect('mongodb://localhost:27017/TodoApp');
+
+        --  Working with the second argument, the callback function:
+            We need to provide a callback function and where are going to pass 2 parameters, the first one is an error argument to handle errors if they exist and the second one is the client object, this is whatw e can use to issue commands to read and write data:
+
+                MongoClient.connect('mongodb://localhost:27017/TodoApp', (error, client) => {
+
+                });
+
+        --  Error handling:
+            Before writting any data, letś handle any potential error that could come about, we can do this by ussing an if statement like this:
+
+                MongoClient.connect('mongodb://localhost:27017/TodoApp', (error, client) => {
+                    if(error){
+                        return console.log("Unable to connect to the MongoDB Server");
+                    }
+                    console.log("Connected to MongoDB Server");
+                });
+
+            This "error handling" is not doing anything fancy, all we're doing is preventing the rest of the function from executing, the program will log the message and then it will be stopped.
+
+        --  Success on connection:
+            Then just to see that the connection works, we're going to log a message on the console and then close the connection:
+            MongoClient.connect('mongodb://localhost:27017/TodoApp', (error, client) => {
+                if(error){
+                    return console.log("Unable to connect to the MongoDB Server");
+                }
+                console.log("Connected to MongoDB Server");
+                const db = client.db('TodoApp');
+                client.close();
+            });
+
+        --  Running the app
+            Now, we can test our app, it's important to remem,ber that we need to have mongod running in another terminal tab, if we have an error like this:
+                Failed to set up listener: SocketException: Address already in use
+
+            we can solve it by specifying a different port, like this:
+                sudo mongod --port 27018
+
+            And after running our program we can see at the Terminal that the connection was openned and then closed.
+
+            CMP
+            **[Explain the creation of the npm start and npm run dev commands]
+
+            Now, somethign that you may or may not be aware is that, we use a new name database but we never created before using it in the MongoClient.connect line. This is because in Mongodb unlike other databse programs, we doin't need to create a datase before using it, we simple use the new name and  MongoDB will create it automatically for us.
+
+[3] Adding data to the database
+
+    So let's keep moving forward and adding some data to our database, before the db.close line, we're going to insert a couple of records into a collection, in our Todo application we're going to have 2 collections:
+        - Users
+        - Todos
+    
+        We can  go ahead and start adding some data to the Todos collection by calling the db.collection method that takes one argument, the name of the collection that we want to insert into, then we need to use a method available in our collection called insertOne, which allows us to insert a new document into our collection and it takes 2 arguments:
+            1.- The first one is an object, this is going to store the variopus key - value pairs we want to have in our document.
+            2.- The second one is a callback function that will be fired when things either fail or go well.
+
+            MongoClient.connect('mongodb://localhost:27017/TodoApp', (error, client) => {
+                if(error){
+                    return console.log("Unable to connect to the MongoDB Server");
+                }
+                console.log("Connected to MongoDB Server");
+                const db = client.db('TodoApp');
+                db.collection(Todos´).insertOne({
+                    text: 'something to do',
+                    completed: false
+                }, (error, result) => {
+                    if(error){
+                        return console.log("Unable to insert todo", error);
+                    }
+                })
+                client.close();
+            });
+
+            Then let's add some success code, we will call the JSON. stringify, where'we are going to pass the result ops. The ops attribute is going to store all the docs that were inserted. In this case we used the insertOne, so it's going to be our one document. Then we can add my other 2 arguments which are undefined for the filter function and 2 for the indentation:
+
+            CMP
+            **[Pretty-printing is implemented natively in JSON.stringify(). The third argument enables pretty printing and sets the spacing to use:]
+
+            MongoClient.connect('mongodb://localhost:27017/TodoApp', (error, client) => {
+                if(error){
+                    return console.log("Unable to connect to the MongoDB Server");
+                }
+                console.log("Connected to MongoDB Server");
+                const db = client.db('TodoApp');
+                db.collection(Todos´).insertOne({
+                    text: 'something to do',
+                    completed: false
+                }, (error, result) => {
+                    if(error){
+                        return console.log("Unable to insert todo", error);
+                    }
+                    console.log(JSON.stringify(result.ops, undefined, 2));
+                })
+                client.close();
+            });
+
+            Then we cans ee the output, we have the text property which gets created by us, the completed property as well, and the _id property which gets automatically added by Mongo, it's a unique identifier given to just this document. We can see this information in RoboMongo.
+
+            Then we can do the same, insert a new document into a new Collection which is the Users collection.
+    
+[4] The object id
+    The first thing that we will notice is that, is not an autoincrementing integer, kind of like it is for MySQL, the ObjectID itself is made up of a few different things, It's a 12-byte value. 
+        - The first 4 bytes are a timestamp. This means that in our documents, we don't need to have a createdAt field; it's already encoded in the ID.
+        - The next 3 are machines identifiers.
+        - The next 2 are procces ID.
+        - The last 3 are a 3 bytes counter.
+
+    It's important to be aware that the value of the _id that MongoDB automatically gives is the default one, you can specify a value in the insertOne method and it's perfectly legal.
+
+    As I mentioned before, inside the _id, we have a timestamp, we can pull it up using the result.ops[0]._id, like this:
+        console.log(result.ops[0]._id.getTimestamp());
+
+[5] Using object destructuring ES6
+    We can use destructuring as follows:
+            var user = { name: "Christian", age: 27  };
+            var { name } = user;
+            console.log(name);      //Christian
+
+        we will be using destructuring in the requirement statment as follows:
+            //const Mongoclient = require('mongodb').MongoClient;
+            const { MongoClient } = require('mongodb');
+
+        In this case, the only property we had was MongoClient. This creates a variable called MongoClient, setting it equal to the Mongoclient porperty of     require('mongodb');
+
+        we can also do something like this:
+            
+            const {MongoClient, ObjectID} = require('mongodb');
+            var obj = new ObjectId();
+
+        This ObjectId constructor function lets us make new ObjectIds on the fly.
+
+[6] Fetching data
+
+    Let's create a duplicated file of the mongodb-connect, but let's named it mongodb-find instead, then we will use this File for fetching data. To start let's use the find method, we are going to access the collection using the db.connection and the method, find, by default, we can call find with no parameters and it will retrieve all the Todos. find returns a MongoDB cursor, and this cursor is not the actual documents themselves. There could be a couple of thousands and that would be really inneficent. It's actually a pointer to those documents, and the cursor has a ton of methods. We can use those mnethods to get our documents.
+    One of the most common methods of this cursor is the toArray, and we can use it to display the documents on console.
+
+        db.collection('Todos').find().toArray().then((docs) => {
+            console.log("Todos");
+            console.log(JSON.stringify(docs, undefined, 2));
+        }, (error) => {
+            console.log("Unable to fetch todos: ", error)
+        });
+
+[7] Writing a query to fetch completed todos
+
+    In order to achieve this we will change the way we call find, Instead of passing in 1, this is what it's known as a query, we can specify that we want the Todos that have the completed value equals to true.
+
+        db.collection('Todos').find({completed: false}).toArray().then((docs) => {
+
+        })
+
+    Also we can query our documents by id, just getting the id from RoboMongo, and use that value on the queryString, is important to improt by destructuring the ObjectId property, otherwise it won't work.
+
+    we can go into the documentation and see what other methods do we have available, let's look for it and use the count method.
+        
+        db.collection('Todos').find({}).count().then((count) => {
+            console.log(`Todos count: ${count}`);
+        }, (err) => {
+            console.log('Unable to fetch todos', err);
+        });
+
+
