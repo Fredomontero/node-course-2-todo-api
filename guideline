@@ -182,4 +182,26 @@
             console.log('Unable to fetch todos', err);
         });
 
+[8] Deleting documents
+
+    There are 3 common methods used for removing data:
+    1.- deleteMany will let us target many documents and remove them.
+    2.- deleteOne which targets one document and removes it.
+    3.- findOneAndDelete lets us removve an individual item and it also returns those values; Imagine that we want to delete a todo but also get the todo object back so I can tell the user exactly which one got deleted.
+
+    deleteMany: we need to pass as an argument an object to the deleteMany method, as we can see right here:
+        db.collection('Users').deleteMany({name: 'Fernando Montero'}).then((result) => {
+            console.log(result);
+        })
+
+    deleteOne: the goal of this methods is to delete the document that matches our query, we can do it as follows:
+        db.collection('Users').deleteOne({name: 'Alfredo Martinez'}).then((result) => {
+            console.log(result);
+        });
+
+    findOneAndDelete: When there exists more than one record that match the criteria, it will deletes the first one that it finds:
+        db.collection('Users').findOneAndDelete({name: 'Ricardo Montero'}).then((result) => {
+            console.log(result);
+        });
+
 
